@@ -15,18 +15,18 @@ export class AdminLoginPage extends BasePage {
   constructor(page: Page) {
     super(page);
     
-    // Initialize locators - Update selectors based on actual admin login page
-    this.emailInput = page.getByLabel('Email'); // Adjust selector as needed
-    this.passwordInput = page.getByLabel('Password'); // Adjust selector as needed
-    this.loginButton = page.getByRole('button', { name: 'Login' }); // Adjust selector as needed
-    this.errorMessage = page.locator('[role="alert"]'); // Adjust selector as needed
+    // Initialize locators - Validated against actual admin login page
+    this.emailInput = page.getByRole('textbox', { name: 'Email' });
+    this.passwordInput = page.getByRole('textbox', { name: 'Password' });
+    this.loginButton = page.getByRole('button', { name: 'Log in' });
+    this.errorMessage = page.getByText('These credentials do not match our records.');
   }
 
   /**
    * Navigate to admin login page
    */
   async navigate(): Promise<void> {
-    await this.goto('/admin/login'); // Update path based on actual admin URL structure
+    await this.goto('/login'); // Update path based on actual admin URL structure
   }
 
   /**
