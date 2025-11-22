@@ -25,55 +25,62 @@ export default defineConfig({
   reporter: 'html',
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
-    /* Base URL to use in actions like `await page.goto('')`. */
-    // baseURL: 'http://localhost:3000',
-
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
   },
 
-  /* Configure projects for major browsers */
+  /* Configure projects for multiple platforms and browsers */
   projects: [
+    /* Website-Livewire Platform Projects */
     {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      name: 'website-livewire-chromium',
+      testDir: './tests/website-livewire',
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'https://joaoestima.com',
+      },
+    },
+    {
+      name: 'website-livewire-firefox',
+      testDir: './tests/website-livewire',
+      use: {
+        ...devices['Desktop Firefox'],
+        baseURL: 'https://joaoestima.com',
+      },
+    },
+    {
+      name: 'website-livewire-webkit',
+      testDir: './tests/website-livewire',
+      use: {
+        ...devices['Desktop Safari'],
+        baseURL: 'https://joaoestima.com',
+      },
     },
 
-    // {
-    //   name: 'firefox',
-    //   use: { ...devices['Desktop Firefox'] },
-    // },
-
-    // {
-    //   name: 'webkit',
-    //   use: { ...devices['Desktop Safari'] },
-    // },
-
-    /* Test against mobile viewports. */
-    // {
-    //   name: 'Mobile Chrome',
-    //   use: { ...devices['Pixel 5'] },
-    // },
-    // {
-    //   name: 'Mobile Safari',
-    //   use: { ...devices['iPhone 12'] },
-    // },
-
-    /* Test against branded browsers. */
-    // {
-    //   name: 'Microsoft Edge',
-    //   use: { ...devices['Desktop Edge'], channel: 'msedge' },
-    // },
-    // {
-    //   name: 'Google Chrome',
-    //   use: { ...devices['Desktop Chrome'], channel: 'chrome' },
-    // },
+    /* Admin Platform Projects */
+    {
+      name: 'admin-chromium',
+      testDir: './tests/admin',
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'https://admin.joaoestima.com',
+      },
+    },
+    {
+      name: 'admin-firefox',
+      testDir: './tests/admin',
+      use: {
+        ...devices['Desktop Firefox'],
+        baseURL: 'https://admin.joaoestima.com',
+      },
+    },
+    {
+      name: 'admin-webkit',
+      testDir: './tests/admin',
+      use: {
+        ...devices['Desktop Safari'],
+        baseURL: 'https://admin.joaoestima.com',
+      },
+    },
   ],
-
-  /* Run your local dev server before starting the tests */
-  // webServer: {
-  //   command: 'npm run start',
-  //   url: 'http://localhost:3000',
-  //   reuseExistingServer: !process.env.CI,
-  // },
 });
