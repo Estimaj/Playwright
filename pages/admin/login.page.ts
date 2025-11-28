@@ -18,7 +18,7 @@ export class AdminLoginPage extends BasePage {
     // Initialize locators - Validated against actual admin login page
     this.emailInput = page.getByRole('textbox', { name: 'Email' });
     this.passwordInput = page.getByRole('textbox', { name: 'Password' });
-    this.loginButton = page.getByRole('button', { name: 'Log in' });
+    this.loginButton = page.getByRole('button', { name: 'Login' });
     this.errorMessage = page.getByText('These credentials do not match our records.');
   }
 
