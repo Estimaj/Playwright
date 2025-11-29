@@ -1,12 +1,12 @@
 import { defineConfig, devices } from '@playwright/test';
+import dotenv from 'dotenv';
+import path from 'path';
 
 /**
  * Read environment variables from file.
  * https://github.com/motdotla/dotenv
  */
-// import dotenv from 'dotenv';
-// import path from 'path';
-// dotenv.config({ path: path.resolve(__dirname, '.env') });
+dotenv.config({ path: path.resolve(__dirname, '.env') });
 
 /**
  * See https://playwright.dev/docs/test-configuration.
@@ -57,30 +57,48 @@ export default defineConfig({
       },
     },
 
-    /* Admin Platform Projects */
+    /* Admin Authentication Setup - Runs ONCE before admin tests */
+    {
+      name: 'admin-auth-setup',
+      testMatch: '**/admin/auth.setup.ts',
+      use: {
+        baseURL: 'https://admin.joaoestima.com',
+      },
+    },
+
+    /* Admin Platform Projects - Use authenticated state */
     {
       name: 'admin-chromium',
       testDir: './tests/admin',
+      testIgnore: '**/auth.setup.ts', // Don't run setup as a regular test
       use: {
         ...devices['Desktop Chrome'],
         baseURL: 'https://admin.joaoestima.com',
+        storageState: '.auth/admin-user.json', // Load saved auth state
       },
+      dependencies: ['admin-auth-setup'], // Run setup first
     },
     {
       name: 'admin-firefox',
       testDir: './tests/admin',
+      testIgnore: '**/auth.setup.ts',
       use: {
         ...devices['Desktop Firefox'],
         baseURL: 'https://admin.joaoestima.com',
+        storageState: '.auth/admin-user.json',
       },
+      dependencies: ['admin-auth-setup'],
     },
     {
       name: 'admin-webkit',
       testDir: './tests/admin',
+      testIgnore: '**/auth.setup.ts',
       use: {
         ...devices['Desktop Safari'],
         baseURL: 'https://admin.joaoestima.com',
+        storageState: '.auth/admin-user.json',
       },
+      dependencies: ['admin-auth-setup'],
     },
   ],
 });

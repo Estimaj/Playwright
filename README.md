@@ -49,6 +49,17 @@ npm install
 npx playwright install
 ```
 
+### Authentication Setup
+
+Admin tests require authentication credentials. Follow these steps to set up:
+
+1. **Create `.env` file** from the template:
+   ```bash
+   cp .env.example .env
+   ```
+
+2. **Never commit `.env`** - it's already in `.gitignore`
+
 ## Running Tests
 
 ### Run All Tests
@@ -222,12 +233,29 @@ Use authentication fixtures for tests requiring login:
 
 ```typescript
 import { test, expect } from '../fixtures/auth.fixtures';
+import { test, expect } from '../../fixtures/auth.fixtures';
 
 test('admin dashboard', async ({ authenticatedAdminPage }) => {
-  // Already logged in
+  // Already authenticated via storageState
+  // No login needed - page starts with authentication loaded
   await authenticatedAdminPage.navigate();
 });
 ```
+
+**How Authentication Works:**
+
+1. **Setup runs first** (`tests/admin/auth.setup.ts`):
+   - Logs in with credentials from `.env`
+   - Saves state to `.auth/admin-user.json`
+
+2. **Admin tests load saved state**:
+   - Browser starts with cookies and session
+   - No login needed in each test
+   - Much faster test execution
+
+3. **Login tests opt-out**:
+   - Use `test.use({ storageState: { cookies: [], origins: [] } })`
+   - Start unauthenticated to test login flow
 
 ## Tags
 
@@ -329,13 +357,70 @@ The `playwright.config.ts` file defines:
 
 ### Environment Variables
 
-You can use environment variables for configuration:
+Environment variables are loaded from `.env` file:
 
 ```bash
-# .env file
-BASE_URL_WEBSITE=https://joaoestima.com
-BASE_URL_ADMIN=https://admin.joaoestima.com
+# .env file (create from .env.example)
+
+# Admin Authentication
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD=your-secure-password
+
+...
 ```
+
+**Adding New User Roles:**
+
+To add a new user role (e.g., Editor):
+
+1. Add credentials to `.env`:
+   ```bash
+   EDITOR_EMAIL=editor@example.com
+   EDITOR_PASSWORD=editor-password
+   ```
+
+2. Create setup script `tests/admin/auth-editor.setup.ts`:
+   ```typescript
+   import { test as setup } from '@playwright/test';
+   import { AdminLoginPage } from '../../pages/admin/login.page';
+   
+   setup('authenticate as editor', async ({ page }) => {
+     const loginPage = new AdminLoginPage(page);
+     await loginPage.navigate();
+     await loginPage.login(
+       process.env.EDITOR_EMAIL!,
+       process.env.EDITOR_PASSWORD!
+     );
+     await page.waitForLoadState('networkidle');
+     await page.context().storageState({ 
+       path: '.auth/editor-user.json' 
+     });
+   });
+   ```
+
+3. Add setup project to `playwright.config.ts`:
+   ```typescript
+   {
+     name: 'editor-auth-setup',
+     testMatch: '**/admin/auth-editor.setup.ts',
+     use: { baseURL: 'https://admin.joaoestima.com' },
+   }
+   ```
+
+4. Create tests that use editor authentication:
+   ```typescript
+   // In playwright.config.ts, create a new project
+   {
+     name: 'admin-editor-chromium',
+     testMatch: '**/admin/editor-*.spec.ts',
+     use: {
+       ...devices['Desktop Chrome'],
+       baseURL: 'https://admin.joaoestima.com',
+       storageState: '.auth/editor-user.json',
+     },
+     dependencies: ['editor-auth-setup'],
+   }
+   ```
 
 ## Test Reports
 

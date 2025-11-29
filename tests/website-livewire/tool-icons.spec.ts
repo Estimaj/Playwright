@@ -1,4 +1,4 @@
-import { test, expect } from '../../fixtures/base.fixtures';
+import { test, expect } from '../../fixtures/website-livewire.fixtures';
 
 /**
  * Test suite for tool icons interaction
