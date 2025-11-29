@@ -14,8 +14,8 @@ A comprehensive Playwright test suite following industry best practices for test
 │   ├── website-livewire/    # Website-specific page objects
 │   └── admin/               # Admin-specific page objects
 ├── fixtures/                # Custom test fixtures
-│   ├── base.fixtures.ts     # Base fixtures with page objects
-│   └── auth.fixtures.ts     # Authentication fixtures
+│   ├── website-livewire.fixtures.ts # Public website fixtures
+│   └── admin.fixtures.ts    # Admin platform fixtures
 ├── utils/                   # Utility functions
 │   └── helpers.ts           # Common helper functions
 ├── data/                    # Test data files
@@ -111,7 +111,7 @@ npx playwright test --grep @regression
 npx playwright test --ui
 
 # Run specific test in UI mode
-npx playwright test --ui tests/website-livewire/joaoestima.spec.ts
+npx playwright test --ui tests/website-livewire/navigation-links.spec.ts
 ```
 
 ### Run Tests in Debug Mode
@@ -121,7 +121,7 @@ npx playwright test --ui tests/website-livewire/joaoestima.spec.ts
 npx playwright test --debug
 
 # Debug specific test
-npx playwright test --debug tests/website-livewire/joaoestima.spec.ts
+npx playwright test --debug tests/website-livewire/navigation-links.spec.ts
 ```
 
 ### Run Tests in Headed Mode
@@ -193,7 +193,7 @@ export class NewPage extends BasePage {
 }
 ```
 
-3. Add the page object to fixtures (`fixtures/base.fixtures.ts`):
+3. Add the page object to the relevant fixtures file (for example, `fixtures/website-livewire.fixtures.ts`):
 
 ```typescript
 newPage: async ({ page }, use) => {
@@ -205,7 +205,7 @@ newPage: async ({ page }, use) => {
 4. Use in tests:
 
 ```typescript
-import { test, expect } from '../fixtures/base.fixtures';
+import { test, expect } from '../fixtures/website-livewire.fixtures';
 
 test('example', async ({ newPage }) => {
   await newPage.navigate();
@@ -215,30 +215,29 @@ test('example', async ({ newPage }) => {
 
 ## Fixtures
 
-### Base Fixtures
+### Website-Livewire Fixtures
 
-Use base fixtures for page objects:
+Use the Website-Livewire fixtures for page objects:
 
 ```typescript
-import { test, expect } from '../fixtures/base.fixtures';
+import { test, expect } from '../fixtures/website-livewire.fixtures';
 
 test('example', async ({ homepagePage }) => {
   await homepagePage.navigate();
 });
 ```
 
-### Authentication Fixtures
+### Admin Fixtures
 
-Use authentication fixtures for tests requiring login:
+For admin tests that require authentication, the fixtures automatically load the saved storage state:
 
 ```typescript
-import { test, expect } from '../fixtures/auth.fixtures';
-import { test, expect } from '../../fixtures/auth.fixtures';
+import { test, expect } from '../../fixtures/admin.fixtures';
 
-test('admin dashboard', async ({ authenticatedAdminPage }) => {
+test('admin dashboard', async ({ dashboardPage }) => {
   // Already authenticated via storageState
-  // No login needed - page starts with authentication loaded
-  await authenticatedAdminPage.navigate();
+  await dashboardPage.navigate();
+  await dashboardPage.verifyDashboardLoaded();
 });
 ```
 
@@ -477,7 +476,7 @@ This project includes GitHub Actions workflow (`.github/workflows/playwright.yml
 
 2. **Use fixtures** for page objects:
    ```typescript
-   import { test, expect } from '../fixtures/base.fixtures';
+   import { test, expect } from '../fixtures/website-livewire.fixtures';
    ```
 
 3. **Follow AAA pattern** (Arrange, Act, Assert)
