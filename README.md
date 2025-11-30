@@ -14,8 +14,8 @@ A comprehensive Playwright test suite following industry best practices for test
 │   ├── website-livewire/    # Website-specific page objects
 │   └── admin/               # Admin-specific page objects
 ├── fixtures/                # Custom test fixtures
-│   ├── base.fixtures.ts     # Base fixtures with page objects
-│   └── auth.fixtures.ts     # Authentication fixtures
+│   ├── website-livewire.fixtures.ts # Public website fixtures
+│   └── admin.fixtures.ts    # Admin platform fixtures
 ├── utils/                   # Utility functions
 │   └── helpers.ts           # Common helper functions
 ├── data/                    # Test data files
@@ -48,6 +48,17 @@ npm install
 # Install Playwright browsers
 npx playwright install
 ```
+
+### Authentication Setup
+
+Admin tests require authentication credentials. Follow these steps to set up:
+
+1. **Create `.env` file** from the template:
+   ```bash
+   cp .env.example .env
+   ```
+
+2. **Never commit `.env`** - it's already in `.gitignore`
 
 ## Running Tests
 
@@ -100,7 +111,7 @@ npx playwright test --grep @regression
 npx playwright test --ui
 
 # Run specific test in UI mode
-npx playwright test --ui tests/website-livewire/joaoestima.spec.ts
+npx playwright test --ui tests/website-livewire/navigation-links.spec.ts
 ```
 
 ### Run Tests in Debug Mode
@@ -110,7 +121,7 @@ npx playwright test --ui tests/website-livewire/joaoestima.spec.ts
 npx playwright test --debug
 
 # Debug specific test
-npx playwright test --debug tests/website-livewire/joaoestima.spec.ts
+npx playwright test --debug tests/website-livewire/navigation-links.spec.ts
 ```
 
 ### Run Tests in Headed Mode
@@ -182,7 +193,7 @@ export class NewPage extends BasePage {
 }
 ```
 
-3. Add the page object to fixtures (`fixtures/base.fixtures.ts`):
+3. Add the page object to the relevant fixtures file (for example, `fixtures/website-livewire.fixtures.ts`):
 
 ```typescript
 newPage: async ({ page }, use) => {
@@ -194,7 +205,7 @@ newPage: async ({ page }, use) => {
 4. Use in tests:
 
 ```typescript
-import { test, expect } from '../fixtures/base.fixtures';
+import { test, expect } from '../fixtures/website-livewire.fixtures';
 
 test('example', async ({ newPage }) => {
   await newPage.navigate();
@@ -204,30 +215,46 @@ test('example', async ({ newPage }) => {
 
 ## Fixtures
 
-### Base Fixtures
+### Website-Livewire Fixtures
 
-Use base fixtures for page objects:
+Use the Website-Livewire fixtures for page objects:
 
 ```typescript
-import { test, expect } from '../fixtures/base.fixtures';
+import { test, expect } from '../fixtures/website-livewire.fixtures';
 
 test('example', async ({ homepagePage }) => {
   await homepagePage.navigate();
 });
 ```
 
-### Authentication Fixtures
+### Admin Fixtures
 
-Use authentication fixtures for tests requiring login:
+For admin tests that require authentication, the fixtures automatically load the saved storage state:
 
 ```typescript
-import { test, expect } from '../fixtures/auth.fixtures';
+import { test, expect } from '../../fixtures/admin.fixtures';
 
-test('admin dashboard', async ({ authenticatedAdminPage }) => {
-  // Already logged in
-  await authenticatedAdminPage.navigate();
+test('admin dashboard', async ({ dashboardPage }) => {
+  // Already authenticated via storageState
+  await dashboardPage.navigate();
+  await dashboardPage.verifyDashboardLoaded();
 });
 ```
+
+**How Authentication Works:**
+
+1. **Setup runs first** (`tests/admin/auth.setup.ts`):
+   - Logs in with credentials from `.env`
+   - Saves state to `.auth/admin-user.json`
+
+2. **Admin tests load saved state**:
+   - Browser starts with cookies and session
+   - No login needed in each test
+   - Much faster test execution
+
+3. **Login tests opt-out**:
+   - Use `test.use({ storageState: { cookies: [], origins: [] } })`
+   - Start unauthenticated to test login flow
 
 ## Tags
 
@@ -329,13 +356,70 @@ The `playwright.config.ts` file defines:
 
 ### Environment Variables
 
-You can use environment variables for configuration:
+Environment variables are loaded from `.env` file:
 
 ```bash
-# .env file
-BASE_URL_WEBSITE=https://joaoestima.com
-BASE_URL_ADMIN=https://admin.joaoestima.com
+# .env file (create from .env.example)
+
+# Admin Authentication
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD=your-secure-password
+
+...
 ```
+
+**Adding New User Roles:**
+
+To add a new user role (e.g., Editor):
+
+1. Add credentials to `.env`:
+   ```bash
+   EDITOR_EMAIL=editor@example.com
+   EDITOR_PASSWORD=editor-password
+   ```
+
+2. Create setup script `tests/admin/auth-editor.setup.ts`:
+   ```typescript
+   import { test as setup } from '@playwright/test';
+   import { AdminLoginPage } from '../../pages/admin/login.page';
+   
+   setup('authenticate as editor', async ({ page }) => {
+     const loginPage = new AdminLoginPage(page);
+     await loginPage.navigate();
+     await loginPage.login(
+       process.env.EDITOR_EMAIL!,
+       process.env.EDITOR_PASSWORD!
+     );
+     await page.waitForLoadState('networkidle');
+     await page.context().storageState({ 
+       path: '.auth/editor-user.json' 
+     });
+   });
+   ```
+
+3. Add setup project to `playwright.config.ts`:
+   ```typescript
+   {
+     name: 'editor-auth-setup',
+     testMatch: '**/admin/auth-editor.setup.ts',
+     use: { baseURL: 'https://admin.joaoestima.com' },
+   }
+   ```
+
+4. Create tests that use editor authentication:
+   ```typescript
+   // In playwright.config.ts, create a new project
+   {
+     name: 'admin-editor-chromium',
+     testMatch: '**/admin/editor-*.spec.ts',
+     use: {
+       ...devices['Desktop Chrome'],
+       baseURL: 'https://admin.joaoestima.com',
+       storageState: '.auth/editor-user.json',
+     },
+     dependencies: ['editor-auth-setup'],
+   }
+   ```
 
 ## Test Reports
 
@@ -392,7 +476,7 @@ This project includes GitHub Actions workflow (`.github/workflows/playwright.yml
 
 2. **Use fixtures** for page objects:
    ```typescript
-   import { test, expect } from '../fixtures/base.fixtures';
+   import { test, expect } from '../fixtures/website-livewire.fixtures';
    ```
 
 3. **Follow AAA pattern** (Arrange, Act, Assert)

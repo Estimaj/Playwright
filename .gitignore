@@ -6,3 +6,9 @@ node_modules/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+
+# Environment variables (contains sensitive credentials)
+.env
+
+# Authentication state files (contains session data)
+.auth/
